@@ -1,5 +1,10 @@
 .zed
 .editorconfig
 UserSettings
-Logs
 Library
+Logs
+Temp
+Obj
+Build
+*.csproj
+*.slnx
