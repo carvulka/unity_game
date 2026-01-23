@@ -4396,7 +4396,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
-  m_Volume: 0.375
+  m_Volume: 0.125
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -5337,7 +5337,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 0/19
+  m_text: 0/0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: e73a58f6e2794ae7b1b7e50b7fb811b0, type: 2}
@@ -5431,6 +5431,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1376328388}
   m_CullTransparentMesh: 1
+--- !u!1 &1424810690
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1424810692}
+  - component: {fileID: 1424810691}
+  m_Layer: 0
+  m_Name: spawn_point (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1424810691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424810690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e296eb94e27e15a0d9a02b1f2c3f1c1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::spawn_point
+  type: 0
+  pool_id: 0
+--- !u!4 &1424810692
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424810690}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.93, y: -0, z: -5.67}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1428152542
 GameObject:
   m_ObjectHideFlags: 0
@@ -7182,6 +7228,8 @@ MonoBehaviour:
   - {fileID: 7160564467547478193, guid: cf8b5724a2a2158cc83d0eefa5b5a94c, type: 3}
   - {fileID: 7160564467547478193, guid: cf8b5724a2a2158cc83d0eefa5b5a94c, type: 3}
   - {fileID: 2695234817663554499, guid: bb07f1b21dbf59f25bfbdd68cfdf755c, type: 3}
+  - {fileID: 1971166268471046575, guid: cc478af7d9e87cb44a6f401b8d57ba33, type: 3}
+  inventory: {fileID: 11400000, guid: 35bb78fd8369edaaf8cebcee1eecfe1f, type: 2}
 --- !u!1 &1900371504
 GameObject:
   m_ObjectHideFlags: 0
@@ -8510,3 +8558,4 @@ SceneRoots:
   - {fileID: 1137871118}
   - {fileID: 1428152544}
   - {fileID: 584658568}
+  - {fileID: 1424810692}
