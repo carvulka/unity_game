@@ -1,0 +1,56 @@
+<configuration>
+
+    <item_pool no_spawn_weight="0">
+        <item>
+            <prefab name="tetrahedron" />
+            <description>tetrahedron</description>
+            <image path="tetrahedron" />
+            <spawn_weight>2</spawn_weight>
+            <bins>
+                <bin id="0" score="8" />
+                <bin id="1" score="12" />
+            </bins>
+        </item>
+    </item_pool>
+    
+    <prop_pools>
+        <prop_pool no_spawn_weight="0" id="0">
+            <prop>
+                <prefab name="table" />
+                <spawn_weight>5</spawn_weight>
+            </prop>
+            <prop>
+                <prefab name="shelves" />
+                <spawn_weight>4</spawn_weight>
+            </prop>
+        </prop_pool>
+        <prop_pool no_spawn_weight="5" id="1">
+            <prop>
+                <prefab name="box" />
+                <spawn_weight>5</spawn_weight>
+            </prop>
+            <prop>
+                <prefab name="sheet" />
+                <spawn_weight>8</spawn_weight>
+            </prop>
+        </prop_pool>
+    </prop_pools>
+    
+    <bins>
+        <bin id="0">
+            <prefab name="drawer" />
+            <transform>
+                <position><x>5</x><y>0</y><z>5</z></position>
+                <rotation><x>0</x><y>-45</y><z>0</z></rotation>
+            </transform>
+        </bin>
+        <bin id="1">
+            <prefab name="drawer" />
+            <transform>
+                <position><x>-5</x><y>0</y><z>-5</z></position>
+                <rotation><x>0</x><y>30</y><z>0</z></rotation>
+            </transform>
+        </bin>
+    </bins>
+    
+</configuration>
