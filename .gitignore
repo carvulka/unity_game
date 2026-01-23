@@ -1,5 +1,7 @@
 .zed
 .editorconfig
+.vs
+.vsconfig
 UserSettings
 Library
 Logs
@@ -8,3 +10,4 @@ Obj
 Build
 *.csproj
 *.slnx
+*.sln
