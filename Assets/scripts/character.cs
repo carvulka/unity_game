@@ -256,7 +256,7 @@ public class CHARACTER : MonoBehaviour
         if (this.hit.transform.TryGetComponent(out BIN bin))
         {
             (ITEM.TYPE type, ITEM.STATE state) = this.inventory.selected_slot().peek();
-            var b = type.bins.Find(b => b.id == bin.id);
+            var b = type.bin_scores.Find(b => b.id == bin.id);
             if (b != null)
             {
                 _ = this.inventory.selected_slot().remove();

@@ -53,6 +53,7 @@
     <Compile Include="Assets/scripts/overlay/tally.cs" />
     <Compile Include="Assets/scripts/overlay/cursor_slot.cs" />
     <Compile Include="Assets/scripts/overlay/backpack_slot.cs" />
+    <Compile Include="Assets/scripts/spawn_point.cs" />
     <Compile Include="Assets/scripts/overlay/tooltip.cs" />
   </ItemGroup>
   <ItemGroup>
