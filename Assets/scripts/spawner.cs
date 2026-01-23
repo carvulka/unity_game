@@ -12,6 +12,7 @@ public class SPAWNER : MonoBehaviour
 
     [Header("configuration")]
     [SerializeField] List<GameObject> prefabs;
+    [SerializeField] INVENTORY inventory;
 
 
 
@@ -38,63 +39,75 @@ public class SPAWNER : MonoBehaviour
                 Debug.LogWarning($"prefab with name '{xml_bin.prefab.name}' was not found");
                 continue;
             }
-            GameObject game_object = Instantiate(prefab, xml_bin.transform.position, Quaternion.Euler(xml_bin.transform.rotation));
-            BIN bin = game_object.AddComponent<BIN>();
+            GameObject instance = Instantiate(prefab, xml_bin.transform.position, Quaternion.Euler(xml_bin.transform.rotation));
+            BIN bin = instance.AddComponent<BIN>();
             bin.id = xml_bin.id;
         }
 
         SPAWN_POINT[] spawn_points = Object.FindObjectsByType<SPAWN_POINT>(FindObjectsSortMode.None);
-        
+
+        int count = 0;
         foreach (SPAWN_POINT spawn_point in spawn_points)
         {
-            this.spawn(spawn_point, xml_configuration);
+            count = count + this.spawn(spawn_point, xml_configuration);
         }
+        this.inventory.set_total_count(count);
     }
 
-    void spawn(SPAWN_POINT spawn_point, XML_CONFIGURATION xml_configuration)
+    int spawn(SPAWN_POINT spawn_point, XML_CONFIGURATION xml_configuration)
     {
         switch (spawn_point.type)
         {
             case SPAWN_POINT.TYPE.item:
                 {
                     XML_ITEM xml_item = choose_item(xml_configuration.item_pool);
-                    if (xml_item == null) { return; }
+                    if (xml_item == null) { return 0; }
                     
                     GameObject prefab = this.prefabs.Find(p => p.name == xml_item.prefab.name);
-                    if (prefab == null) { return; }
+                    if (prefab == null) { return 0; }
                     
                     GameObject instance = Instantiate(prefab, spawn_point.transform.position, spawn_point.transform.rotation);
-                    if (instance == null) { return; }
-                    
-                    ITEM.TYPE item_type = ScriptableObject.CreateInstance<ITEM.TYPE>();
-                    item_type.prefab = prefab;
-                    item_type.sprite = this.load_sprite(xml_item.image.path);
-                    item_type.description = xml_item.description;
-                    foreach (var bin in xml_item.bin_scores)
+                    if (instance == null) { return 0; }
+
+                    if (xml_item.item_type == null)
                     {
-                        item_type.bin_scores.Add(new ITEM.TYPE.BIN_SCORE { id = bin.id, score = bin.score });
+                        xml_item.item_type = ScriptableObject.CreateInstance<ITEM.TYPE>();
+                        xml_item.item_type.prefab = prefab;
+                        xml_item.item_type.sprite = this.load_sprite(xml_item.image.path);
+                        xml_item.item_type.description = xml_item.description;
+                        foreach (var bin in xml_item.bin_scores)
+                        {
+                            xml_item.item_type.bin_scores.Add(new ITEM.TYPE.BIN_SCORE { id = bin.id, score = bin.score });
+                        }
                     }
-                    break;
+                    
+                    ITEM item = instance.AddComponent<ITEM>();
+                    item.type = xml_item.item_type;
+                    item.state = new ITEM.STATE { multiplier = 1f };
+                    return 1;
                 }
             case SPAWN_POINT.TYPE.prop:
                 {
                     XML_PROP xml_prop = choose_prop(xml_configuration.prop_pools.Find(p => p.id == spawn_point.pool_id));
-                    if (xml_prop == null) { return; }
-                    
+                    if (xml_prop == null) { return 0; }
+
                     GameObject prefab = this.prefabs.Find(p => p.name == xml_prop.prefab.name);
-                    if (prefab == null) { return; }
-                    
+                    if (prefab == null) { return 0; }
+
                     GameObject instance = Instantiate(prefab, spawn_point.transform.position, spawn_point.transform.rotation);
-                    if (instance == null) { return; }
-                    
+                    if (instance == null) { return 0; }
+
                     SPAWN_POINT[] child_spawn_points = instance.GetComponentsInChildren<SPAWN_POINT>(true);
+                    int count = 0;
                     foreach (SPAWN_POINT child_spawn_point in child_spawn_points)
                     {
-                        this.spawn(child_spawn_point, xml_configuration);
+                        count = count + this.spawn(child_spawn_point, xml_configuration);
                     }
-                    break;
+                    return count;
                 }
         }
+        //unreachable
+        return 0;
     }
 
     XML_ITEM choose_item(XML_ITEM_POOL xml_item_pool)
@@ -191,6 +204,9 @@ public class XML_ITEM
     [XmlArray("bins")]
     [XmlArrayItem("bin")]
     public List<XML_BIN_SCORE> bin_scores;
+    
+    [XmlIgnore]
+    public ITEM.TYPE item_type = null;
 }
 
 public class XML_PROP_POOL

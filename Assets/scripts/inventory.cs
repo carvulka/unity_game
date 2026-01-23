@@ -40,9 +40,9 @@ public class INVENTORY : ScriptableObject
         this.selected_index = 0;
         this.score = 0f;
         this.sorted_count = 0;
-        this.total_count = 13;
+        this.total_count = 0;
     }
-    
+
     
     
     public float get_score()
@@ -54,7 +54,7 @@ public class INVENTORY : ScriptableObject
     {
         this.score = this.score + score;
         this.sorted_count = this.sorted_count + 1;
-        this.scored?.Invoke();
+        this.scored.Invoke();
 
         if (this.sorted_count == this.total_count)
         {
@@ -66,10 +66,16 @@ public class INVENTORY : ScriptableObject
     {
         return this.sorted_count;
     }
-
+    
     public int get_total_count()
     {
         return this.total_count;
+    }
+    
+    public void set_total_count(int total_count)
+    {
+        this.total_count = total_count;
+        this.scored.Invoke();
     }
 
     
@@ -173,7 +179,7 @@ public class INVENTORY : ScriptableObject
             if (this.count() > 0 && this.get_type() == type)
             {
                 this.state_stack.Push(state);
-                this.modified?.Invoke();
+                this.modified.Invoke();
                 return true;
             }
             return false;
@@ -185,7 +191,7 @@ public class INVENTORY : ScriptableObject
             {
                 this.type = type;
                 this.state_stack.Push(state);
-                this.modified?.Invoke();
+                this.modified.Invoke();
                 return true;
             }
             return false;
@@ -201,7 +207,7 @@ public class INVENTORY : ScriptableObject
                 {
                     this.type = null;
                 }
-                this.modified?.Invoke();
+                this.modified.Invoke();
                 return (type, state);
             }
             return (default, default);
@@ -220,13 +226,13 @@ public class INVENTORY : ScriptableObject
         {
             (this.type, other.type) = (other.type, this.type);
             (this.state_stack, other.state_stack) = (other.state_stack, this.state_stack);
-            this.modified?.Invoke();
-            other.modified?.Invoke();
+            this.modified.Invoke();
+            other.modified.Invoke();
         }
 
         public void trigger_selected()
         {
-            this.selected?.Invoke();
+            this.selected.Invoke();
         }
     }
 }
