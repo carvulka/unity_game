@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Linq;
-using JetBrains.Annotations;
 
 public class CHARACTER : MonoBehaviour
 {
@@ -133,23 +132,28 @@ public class CHARACTER : MonoBehaviour
 		Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         if (Physics.Raycast(ray, out this.hit, this.reach, ~(1 << preview_layer)))
         {
-            (ITEM.TYPE type, ITEM.STATE _) = this.inventory.selected_slot().peek();
-            if (type != null)
+            (ITEM.TYPE item_type, ITEM.STATE _) = this.inventory.selected_slot().peek();
+            if (item_type != null)
             {
-                if (this.hit.transform.TryGetComponent(out BIN _))
+                if (this.hit.collider.TryGetComponent(out BIN _))
                 {
-                    this.set_outline(this.hit);
+                    this.set_outline(this.hit.collider.gameObject);
                     this.reset_preview();
+                }
+                else if (this.hit.collider.TryGetComponent(out SOCKET socket))
+                {
+                    this.reset_outline();
+                    this.set_preview(socket.transform.position, socket.transform.rotation, item_type.prefab);
                 }
                 else if (this.hit.transform.TryGetComponent(out ITEM _))
                 {
-                    this.set_outline(this.hit);
-                    this.set_preview(this.hit, type.prefab);
+                    this.set_outline(this.hit.transform.gameObject);
+                    this.set_preview(this.hit.point, this.camera_facing_rotation(this.hit), item_type.prefab);
                 }
                 else
                 {
                     this.reset_outline();
-                    this.set_preview(this.hit, type.prefab);
+                    this.set_preview(this.hit.point, this.camera_facing_rotation(this.hit), item_type.prefab);
                 }
             }
             else
@@ -157,7 +161,7 @@ public class CHARACTER : MonoBehaviour
                 this.reset_preview();
                 if (this.hit.transform.TryGetComponent(out ITEM _))
                 {
-                    this.set_outline(this.hit);
+                    this.set_outline(this.hit.transform.gameObject);
                 }
                 else
                 {
@@ -233,7 +237,6 @@ public class CHARACTER : MonoBehaviour
               		this.detach();
                	}
                	Destroy(this.hit.transform.gameObject);
-                
                 this.sound_source.clip = this.collect_sound;
                 this.sound_source.Play();
             }
@@ -253,33 +256,53 @@ public class CHARACTER : MonoBehaviour
     {
         if (this.hit.transform == null || this.hit.collider == null) { return; }
         if (this.inventory.selected_slot().count() == 0) { return; }
-        if (this.hit.transform.TryGetComponent(out BIN bin))
+        if (this.hit.collider.TryGetComponent(out BIN bin))
         {
-            (ITEM.TYPE type, ITEM.STATE state) = this.inventory.selected_slot().peek();
-            var b = type.bin_scores.Find(b => b.id == bin.id);
-            if (b != null)
+            (ITEM.TYPE item_type, ITEM.STATE item_state) = this.inventory.selected_slot().peek();
+            if (item_type.target_id == bin.id)
             {
-                _ = this.inventory.selected_slot().remove();
-                this.inventory.increase_score(b.score * state.multiplier);
-                
+                this.inventory.increase_score(item_type.score * item_state.multiplier);
                 this.sound_source.clip = this.correct_sound;
                 this.sound_source.Play();
+                _ = this.inventory.selected_slot().remove();
             }
             else
             {
-                state.multiplier = state.multiplier * this.diminish_multiplier;
-                
+                item_state.multiplier = item_state.multiplier * this.diminish_multiplier;
+                this.sound_source.clip = this.incorrect_sound;
+                this.sound_source.Play();
+            }
+        }
+        else if (this.hit.collider.TryGetComponent(out SOCKET socket))
+        {
+            (ITEM.TYPE item_type, ITEM.STATE item_state) = this.inventory.selected_slot().peek();
+            if (item_type.target_id == socket.id)
+            {
+                this.inventory.increase_score(item_type.score * item_state.multiplier);
+                this.sound_source.clip = this.correct_sound;
+                this.sound_source.Play();
+                GameObject new_object = Instantiate(item_type.prefab, socket.transform.position, socket.transform.rotation, socket.transform);
+                if (new_object.TryGetComponent(out Rigidbody body))
+                {
+                    Destroy(body);
+                }
+                _ = this.inventory.selected_slot().remove();
+                Destroy(socket);
+            }
+            else
+            {
+                item_state.multiplier = item_state.multiplier * this.diminish_multiplier;
                 this.sound_source.clip = this.incorrect_sound;
                 this.sound_source.Play();
             }
         }
         else
         {
-            (ITEM.TYPE type, ITEM.STATE state) = this.inventory.selected_slot().remove();
-            GameObject new_object = Instantiate(type.prefab, this.hit.point, camera_facing_rotation(this.hit));
+            (ITEM.TYPE item_type, ITEM.STATE item_state) = this.inventory.selected_slot().remove();
+            GameObject new_object = Instantiate(item_type.prefab, this.hit.point, camera_facing_rotation(this.hit));
             ITEM item = new_object.AddComponent<ITEM>();
-            item.type = type;
-            item.state = state;
+            item.type = item_type;
+            item.state = item_state;
 
             this.sound_source.clip = this.place_sound;
             this.sound_source.Play();
@@ -309,39 +332,30 @@ public class CHARACTER : MonoBehaviour
 		this.drag_line.enabled = false;
 	}
 
-	void set_layer_recursively(GameObject game_object, int layer)
+	void set_layer_recursively(GameObject parent_object, int layer)
 	{
-    	game_object.layer = layer;
-    	foreach (Transform child in game_object.transform)
+        parent_object.layer = layer;
+    	foreach (Transform child_object in parent_object.transform)
     	{
-        	this.set_layer_recursively(child.gameObject, layer);
+        	this.set_layer_recursively(child_object.gameObject, layer);
     	}
 	}
 
-	void set_preview(RaycastHit hit, GameObject prefab)
+	void set_preview(Vector3 position, Quaternion rotation, GameObject prefab)
     {
-		Quaternion rotation = camera_facing_rotation(hit);
         if (this.preview_object == null || this.preview_prefab != prefab)
         {
             this.reset_preview();
-			this.preview_object = Instantiate(prefab, hit.point, rotation);
+			this.preview_object = Instantiate(prefab, position, rotation);
 			this.preview_prefab = prefab;
-
-            foreach (var collider in this.preview_object.GetComponentsInChildren<Collider>())
-			{
-				collider.isTrigger = true;
-			}
-            foreach (var body in this.preview_object.GetComponentsInChildren<Rigidbody>())
-			{
-				body.isKinematic = true;
-			}
-            foreach (var script in this.preview_object.GetComponentsInChildren<MonoBehaviour>()) 
+            foreach (Collider collider in this.preview_object.GetComponentsInChildren<Collider>())
             {
-                if (script != this)
-				{
-					Destroy(script);
-				};
-            }
+                collider.isTrigger = true;
+			}
+            foreach (Rigidbody body in this.preview_object.GetComponentsInChildren<Rigidbody>())
+			{
+                body.isKinematic = true;
+			}
             foreach (var renderer in this.preview_object.GetComponentsInChildren<Renderer>())
             {
 				//does not work because we loooooooove c# and side effects
@@ -361,7 +375,7 @@ public class CHARACTER : MonoBehaviour
             }
 			this.set_layer_recursively(this.preview_object, preview_layer);
         }
-		this.preview_object.transform.position = hit.point;
+		this.preview_object.transform.position = position;
 		this.preview_object.transform.rotation = rotation;
     }
     
@@ -373,9 +387,8 @@ public class CHARACTER : MonoBehaviour
 		this.preview_prefab = null;
     }
 
-	void set_outline(RaycastHit hit)
+	void set_outline(GameObject game_object)
 	{
-		GameObject game_object = hit.transform.root.gameObject;
 		if (game_object != this.outlined_object)
 		{
 			this.reset_outline();

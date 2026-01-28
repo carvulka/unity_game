@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BIN : MonoBehaviour
+public class SOCKET : MonoBehaviour
 {
     [SerializeField] public int id;
 }

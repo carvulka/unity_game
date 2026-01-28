@@ -8,13 +8,8 @@ public class ITEM : MonoBehaviour
         public GameObject prefab;
         public Sprite sprite;
         public string description;
-        public List<ITEM.TYPE.BIN_SCORE> bin_scores = new List<ITEM.TYPE.BIN_SCORE>();
-
-        public class BIN_SCORE
-        {
-            public int id;
-            public float score;
-        }
+        public float score;
+        public int target_id;
     }
 
     public class STATE

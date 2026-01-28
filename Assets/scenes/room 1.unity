@@ -2532,7 +2532,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 2
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -9783,6 +9783,7 @@ MonoBehaviour:
   prefabs:
   - {fileID: 7538086545023985056, guid: 467bf083a48a9c0679732258b2772a53, type: 3}
   - {fileID: 4353117981352311532, guid: 35460c4e91da57e2a89d2fed6653090a, type: 3}
+  inventory: {fileID: 0}
 --- !u!1 &1900371504
 GameObject:
   m_ObjectHideFlags: 0

@@ -31,94 +31,89 @@ public class SPAWNER : MonoBehaviour
 
         XML_CONFIGURATION xml_configuration = (XML_CONFIGURATION)serializer.Deserialize(stream);
 
-        foreach (var xml_bin in xml_configuration.bins)
+        PROP_SPAWN_POINT[] prop_spawn_points = Object.FindObjectsByType<PROP_SPAWN_POINT>(FindObjectsSortMode.None);
+        foreach (PROP_SPAWN_POINT prop_spawn_point in prop_spawn_points)
         {
-            GameObject prefab = this.prefabs.Find(p => p.name == xml_bin.prefab.name);
-            if (prefab == null)
+            this.spawn_prop(prop_spawn_point, xml_configuration);
+        }
+
+        ITEM_SPAWN_POINT[] item_spawn_points = Object.FindObjectsByType<ITEM_SPAWN_POINT>(FindObjectsSortMode.None);
+        var shuffled_item_spawn_points = item_spawn_points.OrderBy(x => Random.value);
+        int item_count = 0;
+        foreach (ITEM_SPAWN_POINT item_spawn_point in shuffled_item_spawn_points)
+        {
+            if (this.spawn_item(item_spawn_point, xml_configuration))
             {
-                Debug.LogWarning($"prefab with name '{xml_bin.prefab.name}' was not found");
-                continue;
+                item_count++;
             }
-            GameObject instance = Instantiate(prefab, xml_bin.transform.position, Quaternion.Euler(xml_bin.transform.rotation));
-            BIN bin = instance.AddComponent<BIN>();
-            bin.id = xml_bin.id;
         }
-
-        SPAWN_POINT[] spawn_points = Object.FindObjectsByType<SPAWN_POINT>(FindObjectsSortMode.None);
-
-        int count = 0;
-        foreach (SPAWN_POINT spawn_point in spawn_points)
-        {
-            count = count + this.spawn(spawn_point, xml_configuration);
-        }
-        this.inventory.set_total_count(count);
+        this.inventory.set_total_count(item_count);
     }
 
-    int spawn(SPAWN_POINT spawn_point, XML_CONFIGURATION xml_configuration)
+    void spawn_prop(PROP_SPAWN_POINT prop_spawn_point, XML_CONFIGURATION xml_configuration)
     {
-        switch (spawn_point.type)
+        XML_PROP_POOL xml_prop_pool = xml_configuration.prop_pools.Find(p => p.id == prop_spawn_point.prop_pool_id);
+        if (xml_prop_pool == null) { return; }
+
+        XML_PROP xml_prop = this.choose_prop(xml_prop_pool);
+        if (xml_prop == null) { return; }
+        
+        GameObject prefab = this.prefabs.Find(p => p.name == xml_prop.prefab.name);
+        if (prefab == null) { return; }
+
+        GameObject new_object = Instantiate(prefab, prop_spawn_point.transform.position, prop_spawn_point.transform.rotation);
+        if (new_object == null) { return; }
+
+        PROP_SPAWN_POINT[] child_spawn_points = new_object.GetComponentsInChildren<PROP_SPAWN_POINT>(true);
+        foreach (PROP_SPAWN_POINT child_spawn_point in child_spawn_points)
         {
-            case SPAWN_POINT.TYPE.item:
-                {
-                    XML_ITEM xml_item = choose_item(xml_configuration.item_pool);
-                    if (xml_item == null) { return 0; }
-                    
-                    GameObject prefab = this.prefabs.Find(p => p.name == xml_item.prefab.name);
-                    if (prefab == null) { return 0; }
-                    
-                    GameObject instance = Instantiate(prefab, spawn_point.transform.position, spawn_point.transform.rotation);
-                    if (instance == null) { return 0; }
-
-                    if (xml_item.item_type == null)
-                    {
-                        xml_item.item_type = ScriptableObject.CreateInstance<ITEM.TYPE>();
-                        xml_item.item_type.prefab = prefab;
-                        xml_item.item_type.sprite = this.load_sprite(xml_item.image.path);
-                        xml_item.item_type.description = xml_item.description;
-                        foreach (var bin in xml_item.bin_scores)
-                        {
-                            xml_item.item_type.bin_scores.Add(new ITEM.TYPE.BIN_SCORE { id = bin.id, score = bin.score });
-                        }
-                    }
-                    
-                    ITEM item = instance.AddComponent<ITEM>();
-                    item.type = xml_item.item_type;
-                    item.state = new ITEM.STATE { multiplier = 1f };
-                    return 1;
-                }
-            case SPAWN_POINT.TYPE.prop:
-                {
-                    XML_PROP xml_prop = choose_prop(xml_configuration.prop_pools.Find(p => p.id == spawn_point.pool_id));
-                    if (xml_prop == null) { return 0; }
-
-                    GameObject prefab = this.prefabs.Find(p => p.name == xml_prop.prefab.name);
-                    if (prefab == null) { return 0; }
-
-                    GameObject instance = Instantiate(prefab, spawn_point.transform.position, spawn_point.transform.rotation);
-                    if (instance == null) { return 0; }
-
-                    SPAWN_POINT[] child_spawn_points = instance.GetComponentsInChildren<SPAWN_POINT>(true);
-                    int count = 0;
-                    foreach (SPAWN_POINT child_spawn_point in child_spawn_points)
-                    {
-                        count = count + this.spawn(child_spawn_point, xml_configuration);
-                    }
-                    return count;
-                }
+            this.spawn_prop(child_spawn_point, xml_configuration);
         }
-        //unreachable
-        return 0;
+    }
+
+    bool spawn_item(ITEM_SPAWN_POINT item_spawn_point, XML_CONFIGURATION xml_configuration)
+    {
+        XML_ITEM_POOL xml_item_pool = xml_configuration.item_pools.Find(p => p.id == item_spawn_point.item_pool_id);
+        if (xml_item_pool == null) { return false; }
+
+        if (xml_item_pool.current_spawn_count >= xml_item_pool.spawn_count) { return false; }
+
+        XML_ITEM xml_item = choose_item(xml_item_pool);
+        if (xml_item == null) { return false; }
+        
+        GameObject prefab = this.prefabs.Find(p => p.name == xml_item.prefab.name);
+        if (prefab == null) { return false; }
+        
+        GameObject new_object = Instantiate(prefab, item_spawn_point.transform.position, item_spawn_point.transform.rotation);
+        if (new_object == null) { return false; }
+
+        if (xml_item.item_type == null)
+        {
+            xml_item.item_type = ScriptableObject.CreateInstance<ITEM.TYPE>();
+            xml_item.item_type.prefab = prefab;
+            xml_item.item_type.sprite = this.load_sprite(xml_item.image.path);
+            xml_item.item_type.description = xml_item.description;
+            xml_item.item_type.score = xml_item.score;
+            xml_item.item_type.target_id = xml_item_pool.id;
+        }
+        
+        ITEM item = new_object.AddComponent<ITEM>();
+        item.type = xml_item.item_type;
+        item.state = new ITEM.STATE { multiplier = 1f };
+        
+        xml_item_pool.current_spawn_count = xml_item_pool.current_spawn_count + 1;
+        return true;
     }
 
     XML_ITEM choose_item(XML_ITEM_POOL xml_item_pool)
     {
-        int total_weight = xml_item_pool.no_spawn_weight + xml_item_pool.items.Sum(i => i.spawn_weight);
+        int total_weight = xml_item_pool.items.Sum(i => i.spawn_weight);
         int random = Random.Range(0, total_weight);
         int cumulative = 0;
         foreach (XML_ITEM item in xml_item_pool.items)
         {
             cumulative += item.spawn_weight;
-            if (random <= cumulative)
+            if (random < cumulative)
             {
                 return item;
             }
@@ -128,13 +123,13 @@ public class SPAWNER : MonoBehaviour
 
     XML_PROP choose_prop(XML_PROP_POOL xml_prop_pool)
     {
-        int total_weight = xml_prop_pool.no_spawn_weight + xml_prop_pool.props.Sum(i => i.spawn_weight);
+        int total_weight = xml_prop_pool.empty_weight + xml_prop_pool.props.Sum(i => i.spawn_weight);
         int random = Random.Range(0, total_weight);
         int cumulative = 0;
         foreach (XML_PROP prop in xml_prop_pool.props)
         {
             cumulative += prop.spawn_weight;
-            if (random <= cumulative)
+            if (random < cumulative)
             {
                 return prop;
             }
@@ -166,25 +161,28 @@ public class SPAWNER : MonoBehaviour
 [XmlRoot("configuration")]
 public class XML_CONFIGURATION
 {
-    [XmlElement("item_pool")]
-    public XML_ITEM_POOL item_pool;
+    [XmlArray("item_pools")]
+    [XmlArrayItem("item_pool")]
+    public List<XML_ITEM_POOL> item_pools;
     
     [XmlArray("prop_pools")]
     [XmlArrayItem("prop_pool")]
     public List<XML_PROP_POOL> prop_pools;
-
-    [XmlArray("bins")]
-    [XmlArrayItem("bin")]
-    public List<XML_BIN> bins;
 }
 
 public class XML_ITEM_POOL
 {
-    [XmlAttribute("no_spawn_weight")]
-    public int no_spawn_weight;
+    [XmlAttribute("id")]
+    public int id;
     
+    [XmlAttribute("spawn_count")]
+    public int spawn_count;
+
     [XmlElement("item")]
     public List<XML_ITEM> items;
+
+    [XmlIgnore]
+    public int current_spawn_count;
 }
 
 public class XML_ITEM
@@ -201,10 +199,9 @@ public class XML_ITEM
     [XmlElement("spawn_weight")]
     public int spawn_weight;
 
-    [XmlArray("bins")]
-    [XmlArrayItem("bin")]
-    public List<XML_BIN_SCORE> bin_scores;
-    
+    [XmlElement("score")]
+    public float score;
+
     [XmlIgnore]
     public ITEM.TYPE item_type = null;
 }
@@ -214,8 +211,8 @@ public class XML_PROP_POOL
     [XmlAttribute("id")]
     public int id;
 
-    [XmlAttribute("no_spawn_weight")]
-    public int no_spawn_weight;
+    [XmlAttribute("empty_weight")]
+    public int empty_weight;
 
     [XmlElement("prop")]
     public List<XML_PROP> props;
@@ -240,34 +237,4 @@ public class XML_IMAGE
 {
     [XmlAttribute("path")]
     public string path;
-}
-
-public class XML_BIN_SCORE
-{
-    [XmlAttribute("id")]
-    public int id;
-
-    [XmlAttribute("score")]
-    public int score;
-}
-
-public class XML_BIN 
-{
-    [XmlAttribute("id")]
-    public int id;
-
-    [XmlElement("prefab")]
-    public XML_PREFAB prefab;
-
-    [XmlElement("transform")]
-    public XML_TRANSFORM transform;
-}
-
-public class XML_TRANSFORM 
-{
-    [XmlElement("position")]
-    public Vector3 position;
-
-    [XmlElement("rotation")]
-    public Vector3 rotation;
 }

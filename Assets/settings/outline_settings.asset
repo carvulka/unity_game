@@ -35,7 +35,7 @@ MonoBehaviour:
     m_Bits: 1
   layerMask:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 64
   renderQueue: 2
   occlusion: 2
   maskingStrategy: 0
