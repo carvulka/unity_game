@@ -1,7 +1,8 @@
 fileFormatVersion: 2
-guid: 51afab4557bb5e44986317c473694456
-PrefabImporter:
+guid: 707360a9c581a4bd7aa53bfeb1429f71
+NativeFormatImporter:
   externalObjects: {}
+  mainObjectFileID: 11400000
   userData: 
   assetBundleName: 
   assetBundleVariant: 
@@ -10,5 +11,5 @@ AssetOrigin:
   productId: 288108
   packageName: Vintage Retro Room URP
   packageVersion: 1.0
-  assetPath: Assets/Stylized Retro Room/Prefabs/Gramophone with CD.prefab
+  assetPath: Assets/Settings/URP-Performant-Renderer.asset
   uploadId: 676855
