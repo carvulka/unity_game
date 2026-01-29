@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 [CreateAssetMenu(fileName = "inventory", menuName = "inventory")]
 public class INVENTORY : ScriptableObject
@@ -59,6 +60,11 @@ public class INVENTORY : ScriptableObject
         if (this.sorted_count == this.total_count)
         {
             //win game
+            StreamWriter writer = new StreamWriter(Path.Combine(Application.persistentDataPath, MAIN_MENU.leaderboard_path), true);
+            using (writer)
+            {
+                writer.WriteLine($"{PLAYER_INFO.name},{this.score},{Time.timeSinceLevelLoad}");
+            }
         }
     }
 

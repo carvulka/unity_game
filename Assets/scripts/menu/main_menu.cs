@@ -6,29 +6,32 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 
-public class main_menu : MonoBehaviour
+public class MAIN_MENU : MonoBehaviour
 {
-    [SerializeField]
-    TMP_InputField textbox;
-    [SerializeField]
-    TMP_Text error;
+    //constants
+    public const string leaderboard_path = "leaderboard.txt";
+    
+	[Header("components/children")]
+    [SerializeField] TMP_InputField input_field;
+    [SerializeField] TMP_Text error;
 
-    public const string leaderboardFileName = "leaderboard.txt";
-
+    
+    
     public void LoadLevel1()
     {
-        if (!SaveText(textbox))
+        if (!this.save_name())
         {
             return;
         }
-
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 
-    private bool SaveText(TMP_InputField textbox)
+
+
+    private bool save_name()
     {
-        string name = textbox.text.Trim();
-        if (string.IsNullOrEmpty(name)) 
+        string name = this.input_field.text.Trim();
+        if (string.IsNullOrEmpty(name))
         {
             error.text = "Името не може да е празно!";
             return false;
@@ -39,20 +42,20 @@ public class main_menu : MonoBehaviour
             return false;
         }
         // leaderboard contains name and score as csv
-        StreamReader sr = new StreamReader(Path.Combine(Application.persistentDataPath, leaderboardFileName));
-        using(sr)
+        StreamReader reader = new StreamReader(Path.Combine(Application.persistentDataPath, leaderboard_path));
+        using (reader)
         {
-            if (sr.ReadLine().Split(',').First() == name)
+            if (reader.ReadLine().Split(',').First() == name)
             {
                 error.text = $"Името {name} е заето!";
                 return false;
             }
         }
-        PLAYER_INFO.NAME = name;
+        PLAYER_INFO.name = name;
         return true;
     }
 
-    public void QuitGame()
+    public void quit()
     {
         Application.Quit();
     }
