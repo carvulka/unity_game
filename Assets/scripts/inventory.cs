@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.SceneManagement;
 
 [CreateAssetMenu(fileName = "inventory", menuName = "inventory")]
 public class INVENTORY : ScriptableObject
@@ -63,7 +64,10 @@ public class INVENTORY : ScriptableObject
             StreamWriter writer = new StreamWriter(Path.Combine(Application.persistentDataPath, MAIN_MENU.leaderboard_path), true);
             using (writer)
             {
+                PLAYER_INFO.score = this.score;
+                PLAYER_INFO.add_time(Time.timeSinceLevelLoad);
                 writer.WriteLine($"{PLAYER_INFO.name},{this.score},{Time.timeSinceLevelLoad}");
+                SceneManager.LoadScene(4);
             }
         }
     }

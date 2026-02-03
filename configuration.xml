@@ -113,10 +113,6 @@
                 <prefab name="CD" />
                 <spawn_weight>1</spawn_weight>
             </prop>
-            <prop>
-                <prefab name="Keys" />
-                <spawn_weight>1</spawn_weight>
-            </prop>
         </prop_pool>
     </prop_pools>
     
