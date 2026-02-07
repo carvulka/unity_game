@@ -9,6 +9,7 @@ public class ITEM : MonoBehaviour
         public Sprite sprite;
         public string description;
         public float score;
+        public float mass;
         public int target_id;
     }
 
