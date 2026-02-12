@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f536955a07ed74e4e9b286f75f107c93, type: 3}
   m_Name: session_data
   m_EditorClassIdentifier: Assembly-CSharp::SESSION_DATA
-  player_name: 
-  level: 
+  player_name: carvulka
+  level_name: polyhedra_vs_non_polyhedra.xml
   score: 0
   time: 0

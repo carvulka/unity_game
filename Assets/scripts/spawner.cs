@@ -23,56 +23,56 @@ public class SPAWNER : MonoBehaviour
         string level_path = Path.Combine(Application.persistentDataPath, GLOBAL.levels_directory_path, this.session_data.level_name);
         using FileStream stream = new FileStream(level_path, FileMode.Open, FileAccess.Read);
         XmlSerializer serializer = new XmlSerializer(typeof(XML_CONFIGURATION));
-        XML_CONFIGURATION xml_configuration = (XML_CONFIGURATION)serializer.Deserialize(stream);
+        XML_CONFIGURATION configuration = (XML_CONFIGURATION)serializer.Deserialize(stream);
 
-        foreach (XML_PROP_SPAWN_POINT xml_prop_spawn_point in xml_configuration.prop_spawn_points)
+        foreach (XML_PROP_SPAWN_POINT prop_spawn_point in configuration.prop_spawn_points)
         {
             GameObject new_object = new GameObject("prop_spawn_point");
-            new_object.transform.position = xml_prop_spawn_point.position;
-            new_object.transform.rotation = Quaternion.Euler(xml_prop_spawn_point.rotation);
-            new_object.AddComponent<PROP_SPAWN_POINT>().prop_pool_id = xml_prop_spawn_point.prop_pool_id;
+            new_object.transform.position = prop_spawn_point.position;
+            new_object.transform.rotation = Quaternion.Euler(prop_spawn_point.rotation);
+            new_object.AddComponent<PROP_SPAWN_POINT>().prop_pool_id = prop_spawn_point.prop_pool_id;
         }
 
-        foreach (XML_ITEM_SPAWN_POINT xml_item_spawn_point in xml_configuration.item_spawn_points)
+        foreach (XML_ITEM_SPAWN_POINT item_spawn_point in configuration.item_spawn_points)
         {
             GameObject new_object = new GameObject("item_spawn_point");
-            new_object.transform.position = xml_item_spawn_point.position;
-            new_object.transform.rotation = Quaternion.Euler(xml_item_spawn_point.rotation);
-            new_object.AddComponent<ITEM_SPAWN_POINT>().item_pool_id = xml_item_spawn_point.item_pool_id;
+            new_object.transform.position = item_spawn_point.position;
+            new_object.transform.rotation = Quaternion.Euler(item_spawn_point.rotation);
+            new_object.AddComponent<ITEM_SPAWN_POINT>();
         }
 
-        foreach (XML_STATIC_PROP xml_prop in xml_configuration.props)
+        foreach (XML_PROP prop in configuration.props)
         {
-            GameObject prefab = this.prefabs.Find(p => p.name == xml_prop.prefab.name);
-            if (prefab == null) { Debug.Log($"prefab with name '{xml_prop.prefab.name}' was not found");  continue; }
+            GameObject prefab = this.prefabs.Find(p => p.name == prop.prefab.name);
+            if (prefab == null) { Debug.Log($"prefab with name '{prop.prefab.name}' was not found");  continue; }
 
-            GameObject prop_object = Instantiate(prefab, xml_prop.position, Quaternion.Euler(xml_prop.rotation));
+            GameObject prop_object = Instantiate(prefab, prop.position, Quaternion.Euler(prop.rotation));
 
-            if (xml_prop.bin != null)
+            if (prop.bin != null)
             {
-                prop_object.AddComponent<BIN>().id = xml_prop.bin.id;
+                prop_object.AddComponent<BIN>().category_id = prop.bin.category_id;
             }
 
-            foreach (XML_SOCKET xml_socket in xml_prop.sockets)
+            foreach (XML_SOCKET socket in prop.sockets)
             {
                 GameObject socket_object = Instantiate(this.socket_prefab, prop_object.transform);
-                socket_object.transform.localPosition = xml_socket.position;
-                socket_object.transform.localRotation = Quaternion.Euler(xml_socket.rotation);
+                socket_object.transform.localPosition = socket.position;
+                socket_object.transform.localRotation = Quaternion.Euler(socket.rotation);
                 BoxCollider collider = socket_object.GetComponent<BoxCollider>();
-                collider.size = xml_socket.size;
-                collider.center = new Vector3(0f, xml_socket.size.y / 2f, 0f);
-                socket_object.GetComponent<SOCKET>().id = xml_socket.id;
+                collider.size = socket.size;
+                collider.center = new Vector3(0f, socket.size.y / 2f, 0f);
+                socket_object.GetComponent<SOCKET>().category_id = socket.category_id;
             }
 
-            foreach (XML_LABEL xml_label in xml_prop.labels)
+            foreach (XML_LABEL label in prop.labels)
             {
                 GameObject label_object = Instantiate(this.label_prefab, prop_object.transform);
-                label_object.transform.localPosition = xml_label.position;
-                label_object.transform.localRotation = Quaternion.Euler(xml_label.rotation);
-                label_object.GetComponent<RectTransform>().sizeDelta = new Vector2(xml_label.width, xml_label.height);
+                label_object.transform.localPosition = label.position;
+                label_object.transform.localRotation = Quaternion.Euler(label.rotation);
+                label_object.GetComponent<RectTransform>().sizeDelta = new Vector2(label.width, label.height);
                 TextMeshPro text = label_object.GetComponent<TextMeshPro>();
-                text.text = xml_label.text;
-                text.alignment = (xml_label.vertical_alignment, xml_label.horizontal_alignment) switch
+                text.text = label.text;
+                text.alignment = (label.vertical_alignment, label.horizontal_alignment) switch
                 {
                     ("top", "left")      => TextAlignmentOptions.TopLeft,
                     ("top", "center")    => TextAlignmentOptions.Top,
@@ -88,104 +88,102 @@ public class SPAWNER : MonoBehaviour
             }
         }
 
-        foreach (PROP_SPAWN_POINT prop_spawn_point in Object.FindObjectsByType<PROP_SPAWN_POINT>(FindObjectsSortMode.None))
+        foreach (PROP_SPAWN_POINT prop_spawn_point in FindObjectsByType<PROP_SPAWN_POINT>(FindObjectsSortMode.None))
         {
-            this.spawn_prop(prop_spawn_point, xml_configuration);
+            this.spawn_prop(prop_spawn_point, configuration);
         }
 
-        foreach (ITEM_SPAWN_POINT item_spawn_point in Object.FindObjectsByType<ITEM_SPAWN_POINT>(FindObjectsSortMode.None).OrderBy(x => Random.value))
+        foreach (ITEM_SPAWN_POINT item_spawn_point in FindObjectsByType<ITEM_SPAWN_POINT>(FindObjectsSortMode.None).OrderBy(x => Random.value))
         {
-            this.spawn_item(item_spawn_point, xml_configuration);
+            this.spawn_item(item_spawn_point, configuration);
         }
-        this.inventory.set_total_tally_count(xml_configuration.item_pools.Sum(pool => pool.current_spawn_count));
+        this.inventory.set_total_tally_count(configuration.categories.Sum(e => e.current_spawn_count));
+        //this.session_data.set_total_tally_count
+        //this.session_data.set_max_score
     }
 
-    void spawn_prop(PROP_SPAWN_POINT prop_spawn_point, XML_CONFIGURATION xml_configuration)
+    void spawn_prop(PROP_SPAWN_POINT prop_spawn_point, XML_CONFIGURATION configuration)
     {
-        XML_PROP_POOL xml_prop_pool = xml_configuration.prop_pools.Find(p => p.id == prop_spawn_point.prop_pool_id);
-        if (xml_prop_pool == null) { Debug.Log($"prop pool with id '{prop_spawn_point.prop_pool_id}' was not found"); return; }
+        XML_PROP_POOL prop_pool = configuration.prop_pools.Find(p => p.id == prop_spawn_point.prop_pool_id);
+        if (prop_pool == null) { Debug.Log($"prop pool with id '{prop_spawn_point.prop_pool_id}' was not found"); return; }
 
-        XML_PROP xml_prop = this.sample_prop_pool(xml_prop_pool);
-        if (xml_prop == null) { return; }
+        XML_PROP_POOL_ENTRY prop_pool_entry = this.sample_prop_pool(prop_pool);
+        if (prop_pool_entry == null) { return; }
         
-        GameObject prefab = this.prefabs.Find(p => p.name == xml_prop.prefab.name);
-        if (prefab == null) { Debug.Log($"prop prefab with name '{xml_prop.prefab.name}' was not found"); return; }
+        GameObject prop_prefab = this.prefabs.Find(p => p.name == prop_pool_entry.prefab.name);
+        if (prop_prefab == null) { Debug.Log($"prop prefab with name '{prop_pool_entry.prefab.name}' was not found"); return; }
 
-        GameObject prop_object = Instantiate(prefab, prop_spawn_point.transform.position, prop_spawn_point.transform.rotation);
-        prop_object.AddComponent<Rigidbody>().mass = xml_prop.mass;
-
-        foreach (PROP_SPAWN_POINT child_spawn_point in prop_object.GetComponentsInChildren<PROP_SPAWN_POINT>(true))
-        {
-            this.spawn_prop(child_spawn_point, xml_configuration);
-        }
+        GameObject prop_object = Instantiate(prop_prefab, prop_spawn_point.transform.position, prop_spawn_point.transform.rotation);
+        prop_object.AddComponent<Rigidbody>().mass = prop_pool_entry.mass;
     }
 
-    void spawn_item(ITEM_SPAWN_POINT item_spawn_point, XML_CONFIGURATION xml_configuration)
+    void spawn_item(ITEM_SPAWN_POINT item_spawn_point, XML_CONFIGURATION configuration)
     {
-        XML_ITEM_POOL xml_item_pool = xml_configuration.item_pools.Find(p => p.id == item_spawn_point.item_pool_id);
-        if (xml_item_pool == null) { Debug.Log($"item pool with id '{item_spawn_point.item_pool_id}' was not found"); return; }
+        XML_ITEM_POOL_ENTRY item_pool_entry = this.sample_item_pool(configuration.item_pool);
+        if (item_pool_entry == null) { return; }
 
-        if (xml_item_pool.current_spawn_count >= xml_item_pool.spawn_count) { return; }
-
-        XML_ITEM xml_item = sample_item_pool(xml_item_pool);
-        if (xml_item == null) { return; }
+        GameObject item_prefab = this.prefabs.Find(p => p.name == item_pool_entry.prefab.name);
+        if (item_prefab == null) { return; }
         
-        GameObject prefab = this.prefabs.Find(p => p.name == xml_item.prefab.name);
-        if (prefab == null) { return; }
-        
-        GameObject item_object = Instantiate(prefab, item_spawn_point.transform.position, item_spawn_point.transform.rotation);
+        GameObject item_object = Instantiate(item_prefab, item_spawn_point.transform.position, item_spawn_point.transform.rotation);
 
-        if (xml_item.item_type == null)
+        XML_CATEGORY category = configuration.categories.Find(e => e.id == item_pool_entry.category_id);
+        if (item_pool_entry.item_type == null)
         {
-            xml_item.item_type = ScriptableObject.CreateInstance<ITEM.TYPE>();
-            xml_item.item_type.prefab = prefab;
-            xml_item.item_type.sprite = this.load_sprite(xml_item.image.path);
-            xml_item.item_type.description = xml_item.description;
-            xml_item.item_type.score = xml_item.score;
-            xml_item.item_type.mass = xml_item.mass;
-            xml_item.item_type.target_id = xml_item_pool.id;
+            item_pool_entry.item_type = ScriptableObject.CreateInstance<ITEM.TYPE>();
+            item_pool_entry.item_type.prefab = item_prefab;
+            item_pool_entry.item_type.sprite = this.load_sprite(item_pool_entry.image.path);
+            item_pool_entry.item_type.description = item_pool_entry.description;
+            item_pool_entry.item_type.mass = item_pool_entry.mass;
+            item_pool_entry.item_type.category_id = category.id;
+            item_pool_entry.item_type.score = category.score;
         }
         
         ITEM item = item_object.AddComponent<ITEM>();
-        item.type = xml_item.item_type;
+        item.type = item_pool_entry.item_type;
         item.state = new ITEM.STATE { multiplier = 1f };
 
-        item_object.AddComponent<Rigidbody>().mass = xml_item.item_type.mass;
-        
-        xml_item_pool.current_spawn_count = xml_item_pool.current_spawn_count + 1;
+        item_object.AddComponent<Rigidbody>().mass = item_pool_entry.item_type.mass;
+
+        category.current_spawn_count = category.current_spawn_count + 1;
+        if (category.current_spawn_count == category.max_spawn_count)
+        {
+            configuration.item_pool.items.FindAll(e => e.category_id == category.id).ForEach(e => e.weight = 0);
+        }
     }
 
-    XML_ITEM sample_item_pool(XML_ITEM_POOL xml_item_pool)
+    XML_PROP_POOL_ENTRY sample_prop_pool(XML_PROP_POOL prop_pool)
     {
-        int total_weight = xml_item_pool.empty_weight + xml_item_pool.items.Sum(i => i.spawn_weight);
+        int total_weight = prop_pool.empty_weight + prop_pool.props.Sum(e => e.weight);
         int random = Random.Range(0, total_weight);
         int cumulative = 0;
-        foreach (XML_ITEM item in xml_item_pool.items)
+        foreach (XML_PROP_POOL_ENTRY prop_pool_entry in prop_pool.props)
         {
-            cumulative += item.spawn_weight;
+            cumulative += prop_pool_entry.weight;
             if (random < cumulative)
             {
-                return item;
+                return prop_pool_entry;
+            }
+        }
+        return null;
+    }
+    
+    XML_ITEM_POOL_ENTRY sample_item_pool(XML_ITEM_POOL item_pool)
+    {
+        int total_weight = item_pool.items.Sum(e => e.weight);
+        int random = Random.Range(0, total_weight);
+        int cumulative = 0;
+        foreach (XML_ITEM_POOL_ENTRY item_pool_entry in item_pool.items)
+        {
+            cumulative += item_pool_entry.weight;
+            if (random < cumulative)
+            {
+                return item_pool_entry;
             }
         }
         return null;
     }
 
-    XML_PROP sample_prop_pool(XML_PROP_POOL xml_prop_pool)
-    {
-        int total_weight = xml_prop_pool.empty_weight + xml_prop_pool.props.Sum(i => i.spawn_weight);
-        int random = Random.Range(0, total_weight);
-        int cumulative = 0;
-        foreach (XML_PROP prop in xml_prop_pool.props)
-        {
-            cumulative += prop.spawn_weight;
-            if (random < cumulative)
-            {
-                return prop;
-            }
-        }
-        return null;
-    }
     
 
     public Sprite load_sprite(string image_name)
@@ -211,9 +209,12 @@ public class SPAWNER : MonoBehaviour
 [XmlRoot("configuration")]
 public class XML_CONFIGURATION
 {
-    [XmlArray("item_pools")]
-    [XmlArrayItem("item_pool")]
-    public List<XML_ITEM_POOL> item_pools = new List<XML_ITEM_POOL>();
+    [XmlArray("categories")]
+    [XmlArrayItem("category")]
+    public List<XML_CATEGORY> categories = new List<XML_CATEGORY>();
+    
+    [XmlElement("item_pool")]
+    public XML_ITEM_POOL item_pool;
 
     [XmlArray("prop_pools")]
     [XmlArrayItem("prop_pool")]
@@ -229,17 +230,87 @@ public class XML_CONFIGURATION
 
     [XmlArray("props")]
     [XmlArrayItem("prop")]
-    public List<XML_STATIC_PROP> props = new List<XML_STATIC_PROP>();
+    public List<XML_PROP> props = new List<XML_PROP>();
+}
+
+public class XML_CATEGORY
+{
+    [XmlAttribute("id")]
+    public int id;
+
+    [XmlAttribute("score")]
+    public int score;
+
+    [XmlAttribute("max_spawn_count")]
+    public int max_spawn_count;
+
+
+
+    [XmlIgnore]
+    public int current_spawn_count = 0;
+}
+
+public class XML_ITEM_POOL
+{
+    [XmlElement("item")]
+    public List<XML_ITEM_POOL_ENTRY> items;
+}
+
+public class XML_ITEM_POOL_ENTRY
+{
+    [XmlAttribute("weight")]
+    public int weight;
+
+    [XmlAttribute("category_id")]
+    public int category_id;
+    
+    [XmlElement("prefab")]
+    public XML_PREFAB prefab;
+    
+    [XmlElement("image")]
+    public XML_IMAGE image;
+
+    [XmlElement("description")]
+    public string description;
+
+    [XmlElement("mass")]
+    public float mass;
+
+    
+    
+    [XmlIgnore]
+    public ITEM.TYPE item_type = null;
+}
+
+public class XML_PROP_POOL
+{
+    [XmlAttribute("id")]
+    public int id;
+
+    [XmlAttribute("empty_weight")]
+    public int empty_weight;
+
+    [XmlElement("prop")]
+    public List<XML_PROP_POOL_ENTRY> props;
+}
+
+public class XML_PROP_POOL_ENTRY
+{
+    [XmlAttribute("weight")]
+    public int weight;
+    
+    [XmlElement("prefab")]
+    public XML_PREFAB prefab;
+
+    [XmlElement("mass")]
+    public float mass;
 }
 
 public class XML_ITEM_SPAWN_POINT
 {
-    [XmlAttribute("item_pool_id")]
-    public int item_pool_id;
-
     [XmlElement("position")]
     public Vector3 position;
-    
+
     [XmlElement("rotation")]
     public Vector3 rotation;
 }
@@ -256,7 +327,7 @@ public class XML_PROP_SPAWN_POINT
     public Vector3 rotation;
 }
 
-public class XML_STATIC_PROP
+public class XML_PROP
 {
     [XmlElement("prefab")]
     public XML_PREFAB prefab;
@@ -281,14 +352,14 @@ public class XML_STATIC_PROP
 
 public class XML_BIN
 {
-    [XmlAttribute("id")]
-    public int id;
+    [XmlAttribute("category_id")]
+    public int category_id;
 }
 
 public class XML_SOCKET
 {
-    [XmlAttribute("id")]
-    public int id;
+    [XmlAttribute("category_id")]
+    public int category_id;
 
     [XmlElement("position")]
     public Vector3 position;
@@ -322,76 +393,6 @@ public class XML_LABEL
 
     [XmlElement("height")]
     public float height;
-}
-
-public class XML_ITEM_POOL
-{
-    [XmlAttribute("id")]
-    public int id;
-
-    [XmlAttribute("empty_weight")]
-    public int empty_weight;
-
-    [XmlAttribute("spawn_count")]
-    public int spawn_count;
-
-    [XmlElement("item")]
-    public List<XML_ITEM> items;
-
-
-
-    [XmlIgnore]
-    public int current_spawn_count = 0;
-}
-
-public class XML_ITEM
-{
-    [XmlElement("spawn_weight")]
-    public int spawn_weight;
-    
-    [XmlElement("prefab")]
-    public XML_PREFAB prefab;
-    
-    [XmlElement("image")]
-    public XML_IMAGE image;
-
-    [XmlElement("description")]
-    public string description;
-
-    [XmlElement("score")]
-    public float score;
-
-    [XmlElement("mass")]
-    public float mass;
-
-    
-    
-    [XmlIgnore]
-    public ITEM.TYPE item_type = null;
-}
-
-public class XML_PROP_POOL
-{
-    [XmlAttribute("id")]
-    public int id;
-
-    [XmlAttribute("empty_weight")]
-    public int empty_weight;
-
-    [XmlElement("prop")]
-    public List<XML_PROP> props;
-}
-
-public class XML_PROP
-{
-    [XmlElement("spawn_weight")]
-    public int spawn_weight;
-    
-    [XmlElement("prefab")]
-    public XML_PREFAB prefab;
-
-    [XmlElement("mass")]
-    public float mass;
 }
 
 public class XML_PREFAB

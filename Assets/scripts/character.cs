@@ -258,7 +258,7 @@ public class CHARACTER : MonoBehaviour
         if (this.hit.transform.TryGetComponent(out SOCKET socket))
         {
             (ITEM.TYPE item_type, ITEM.STATE item_state) = this.inventory.selected_slot().peek();
-            if (item_type.target_id == socket.id)
+            if (item_type.category_id == socket.category_id)
             {
                 this.inventory.set_score(this.inventory.get_score() + item_type.score * item_state.multiplier);
                 this.inventory.set_current_tally_count(this.inventory.get_current_tally_count() + 1);
@@ -278,7 +278,7 @@ public class CHARACTER : MonoBehaviour
         else if (this.hit.transform.root.TryGetComponent(out BIN bin))
         {
             (ITEM.TYPE item_type, ITEM.STATE item_state) = this.inventory.selected_slot().peek();
-            if (item_type.target_id == bin.id)
+            if (item_type.category_id == bin.category_id)
             {
                 this.inventory.set_score(this.inventory.get_score() + item_type.score * item_state.multiplier);
                 this.inventory.set_current_tally_count(this.inventory.get_current_tally_count() + 1);

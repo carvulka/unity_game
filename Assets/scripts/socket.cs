@@ -2,5 +2,5 @@ using UnityEngine;
 
 public class SOCKET : MonoBehaviour
 {
-    [SerializeField] public int id;
+    [SerializeField] public int category_id;
 }

@@ -8,9 +8,9 @@ public class ITEM : MonoBehaviour
         public GameObject prefab;
         public Sprite sprite;
         public string description;
-        public float score;
         public float mass;
-        public int target_id;
+        public int category_id;
+        public float score;
     }
 
     public class STATE
