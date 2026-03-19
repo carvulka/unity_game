@@ -1,0 +1,13 @@
+.vscode
+.zed
+.vs
+.vsconfig
+UserSettings
+Library
+Logs
+Temp
+Obj
+Build
+*.csproj
+*.slnx
+*.sln
